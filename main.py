@@ -48,75 +48,47 @@ def evaluate(data, X, Y, model, evaluateL2, evaluateL1, batch_size, args, yscale
         yeva = torch.from_numpy(yeva).float()
         Xf = torch.from_numpy(Xf).float()
         yf = torch.from_numpy(yf).float()
-        ypred = model(yeva)
 
-        scale = data.scale[batch]
-        scale = scale.view([scale.size(0),1])
+        for i in range(len(Xeva[0][0])):
 
-        ypred = ypred*scale
-        yf = yf*scale
+            yeva = Xeva[:,:,i]
+            yf =  Xf[:,:,i]
 
-        ypred = ypred.data.numpy()
-        if yscaler is not None:
-            ypred = yscaler.inverse_transform(ypred)
-        ypred = ypred.ravel()
+            ypred = model(yeva)
 
+            scale = data.scale[batch]
+            scale = scale.view([scale.size(0),1])
 
+            ypred = ypred*scale
+            yf = yf*scale
 
+            ypred = ypred.data.numpy()
+            if yscaler is not None:
+                ypred = yscaler.inverse_transform(ypred)
+            ypred = ypred.ravel()
 
-    # for X, Y in data.get_batches(X, Y, batch_size, False):
-    #
-    #     Xeva = np.asarray(X.permute(0,2,1))
-    #     yeva = np.asarray(Y)
-    #     num_ts = X.shape[0]
-    #     num_periods = X.shape[1]
-    #     num_features = X.shape[2]
-    #
-    #     mape_list = []
-    #     X_eva = Xeva[:, -seq_len-obs_len:-seq_len, :].reshape((num_ts, -1, num_features))
-    #     Xf_eva = Xeva[:, -seq_len:, :].reshape((num_ts, -1, num_features))
-    #     y_eva = yeva[:, -seq_len-obs_len:-seq_len].reshape((num_ts, -1))
-    #     yf_eva = yeva[:, -seq_len:].reshape((num_ts, -1))
-    #
-    #     if yscaler is not None:
-    #         yeva = yscaler.fit_transform(yeva)
-    #         y_eva = yscaler.fit_transform(y_eva)
-    #
-    #     X_eva = torch.from_numpy(X_eva).float()
-    #     y_eva = torch.from_numpy(y_eva).float()
-    #     Xf_eva = torch.from_numpy(Xf_eva).float()
-    #
-    #     ypred = model(y_eva)
+            yfs  = yf.shape
+            ypred = ypred.ravel().reshape(yfs[0], yfs[1])
 
+            ypred = torch.Tensor(ypred)
+            yf = torch.Tensor(yf)
 
+            if torch.isnan(yf).any():
+                continue
 
-        yfs  = yf.shape
-        ypred = ypred.ravel().reshape(yfs[0], yfs[1])
+            if predict is None:
+                predict = ypred;
+                test = yf;
+            else:
+                predict = torch.cat((predict,ypred));
+                test = torch.cat((test, yf));
 
-        ypred = torch.Tensor(ypred)
-        yf = torch.Tensor(yf)
+            total_loss += evaluateL2(ypred, yf ).item()
+            total_loss_l1 += evaluateL1(ypred, yf).item()
 
-        # print("\nevaluation")
-        # print("yf.shape()",yf.shape)
-        # print("ypred.shape()",ypred.shape)
+            n_samples += (yf.size(0))
+            # n_samples += (yf.size(0) * data.m)
 
-        if torch.isnan(yf).any():
-            continue
-
-        if predict is None:
-            predict = ypred;
-            test = yf;
-        else:
-            predict = torch.cat((predict,ypred));
-            test = torch.cat((test, yf));
-
-
-        # scale = data.scale.expand(ypred.size(0), data.m)
-        # scale = torch.from_numpy(np.ones(ypred.size(1))).float().expand(ypred.size(0), ypred.size(1));
-        total_loss += evaluateL2(ypred, yf ).item()
-        total_loss_l1 += evaluateL1(ypred, yf).item()
-
-        n_samples += (yf.size(0) * data.m)
 
     rse = math.sqrt(total_loss / n_samples)/data.rse
     rae = (total_loss_l1/n_samples)/data.rae
@@ -165,7 +137,14 @@ def train(Data,args):
         yscaler = util.MaxScaler()
 
 
-    model = TPALSTM(1, args.seq_len, args.hidden_size, args.num_obs_to_train, args.n_layers)
+    # model = TPALSTM(1, args.seq_len, args.hidden_size, args.num_obs_to_train, args.n_layers)
+
+    modelPath = "/home/isabella/Documents/5331/tpaLSTM/model/electricity.pt"
+
+    with open(modelPath, 'rb') as f:
+        model = torch.load(f)
+
+
     optimizer = Adam(model.parameters(), lr=args.lr)
     random.seed(2)
 
@@ -209,24 +188,31 @@ def train(Data,args):
         #     print("Y.shape", Y.shape)
 
         for step in range(args.step_per_epoch):
+            print(step)
             Xtrain, ytrain, Xf, yf, batch = util.batch_generator(Xtr, ytr, obs_len, seq_len, args.batch_size)
             Xtrain = torch.from_numpy(Xtrain).float()
             ytrain = torch.from_numpy(ytrain).float()
             Xf = torch.from_numpy(Xf).float()
             yf = torch.from_numpy(yf).float()
-            ypred = model(ytrain)
-            scale = Data.scale[batch]
-            scale = scale.view([scale.size(0),1])
 
-            loss = criterion(ypred*scale, yf*scale)
+            for i in range(len(Xeva[0][0])):
 
-            losses.append(loss.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                ytrain = Xtrain[:,:,i]
+                yf =  Xf[:,:,i]
 
-            total_loss += loss.item();
-            n_samples += (ypred.size(0) * Data.m);
+                ypred = model(ytrain)
+                scale = Data.scale[batch]
+                scale = scale.view([scale.size(0),1])
+
+                loss = criterion(ypred*scale, yf*scale)
+
+                losses.append(loss.item())
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                total_loss += loss.item();
+                n_samples += (ypred.size(0));
 
         train_loss = total_loss / n_samples
 
@@ -245,6 +231,10 @@ def train(Data,args):
             print ("test rse {:5.4f} | test rae {:5.4f} | test corr {:5.4f}".
             format(test_acc, test_rae, test_corr))
 
+
+    # test_acc, test_rae, test_corr  = evaluate(Data, Xte, yte, model, evaluateL2, evaluateL1, args.batch_size, args, yscaler);
+    # print ("test rse {:5.4f} | test rae {:5.4f} | test corr {:5.4f}".
+    # format(test_acc, test_rae, test_corr))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
