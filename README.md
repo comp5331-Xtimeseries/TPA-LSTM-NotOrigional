@@ -1,6 +1,7 @@
 # Pytorch Implementation of TPA-LSTM.
 
 The code was adapted from https://github.com/jingw2/demand_forecast
+This implementation is different from the paper.
 
 ## Requirements
 Please install [Pytorch](https://pytorch.org/) before run it, and
