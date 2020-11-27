@@ -1,8 +1,0 @@
-/home/isabella/.local/lib/python3.6/site-packages/torch/nn/_reduction.py:46: UserWarning: size_average and reduce args will be deprecated, please use reduction='sum' instead.
-  warnings.warn(warning.format(ret))
-  0% |                                                                        |100% |########################################################################|
-dSet.shape (52560, 137)
-tensor(8.9212)
-0
-| end of epoch   0 | time: 539.29s | train_loss 426.0907 | valid rse 4.2703 | valid rae 13.1281 | valid corr  -0.1715
-test rse 5.4863 | test rae 16.9983 | test corr -0.1214
