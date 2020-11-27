@@ -137,12 +137,12 @@ def train(Data,args):
         yscaler = util.MaxScaler()
 
 
-    # model = TPALSTM(1, args.seq_len, args.hidden_size, args.num_obs_to_train, args.n_layers)
+    model = TPALSTM(1, args.seq_len, args.hidden_size, args.num_obs_to_train, args.n_layers)
 
-    modelPath = "/home/isabella/Documents/5331/tpaLSTM/model/electricity.pt"
-
-    with open(modelPath, 'rb') as f:
-        model = torch.load(f)
+    # modelPath = "/home/isabella/Documents/5331/tpaLSTM/model/electricity.pt"
+    #
+    # with open(modelPath, 'rb') as f:
+    #     model = torch.load(f)
 
 
     optimizer = Adam(model.parameters(), lr=args.lr)
