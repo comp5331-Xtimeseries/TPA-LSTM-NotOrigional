@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Pytorch Implementation of TPA-LSTM.
 
 The code was adapted from https://github.com/jingw2/demand_forecast
@@ -24,3 +25,6 @@ Use either of the command to train, evaluate and get the result of the specific 
 - ./result store the training, evaluation and testing result
 - main.py execute the training, evaluation and testing process
 - tpaLSTM.py has the model structure  
+=======
+# Implementation of tpaLSTM on the solar, electricity, traffic and exchange rate data
+>>>>>>> 70cc431fc6b43bc5718f19287db4bf2210af2992
